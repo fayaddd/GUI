@@ -1,0 +1,274 @@
+//Fayyadh Radhwa Ferdia
+//235150401111058
+// SISTEM INFORMASI - E
+
+package GUI;
+
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.*;
+
+public class aplikasiGUI {
+    private JFrame frame;
+    private JTextField idField, nameField, emailField, subjectField;
+    private JButton addButton, refreshButton, deleteButton, updateButton;
+    private JTable table;
+    private DefaultTableModel tableModel;
+    private JLabel statusLabel;
+
+    private Connection connect() {
+        String url = "jdbc:mysql://localhost:3306/sample_db";
+        String username = "root";
+        String password = "padang010605";
+        Connection conn = null;
+        try {
+            conn = DriverManager.getConnection(url, username, password);
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return conn;
+    }
+
+    public aplikasiGUI() {
+        frame = new JFrame("Database GUI");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(800, 600);
+        frame.setLayout(null); // Using null layout for manual positioning
+
+        // Panel untuk konten utama
+        JPanel mainPanel = new JPanel();
+        mainPanel.setBounds(10, 50, 780, 430);
+        mainPanel.setLayout(null);
+        mainPanel.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+        frame.add(mainPanel);
+
+        // Judul
+        JLabel titleLabel = new JLabel("Database");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        titleLabel.setBounds(250, 10, 300, 30);
+        frame.add(titleLabel);
+
+        // Label dan TextField untuk ID
+        JLabel idLabel = new JLabel("ID:");
+        idLabel.setBounds(50, 30, 100, 25);
+        mainPanel.add(idLabel);
+
+        idField = new JTextField();
+        idField.setBounds(150, 30, 150, 25);
+        mainPanel.add(idField);
+
+        // Label dan TextField untuk Nama
+        JLabel nameLabel = new JLabel("Nama:");
+        nameLabel.setBounds(50, 70, 100, 25);
+        mainPanel.add(nameLabel);
+
+        nameField = new JTextField();
+        nameField.setBounds(150, 70, 150, 25);
+        mainPanel.add(nameField);
+
+        // Label dan TextField untuk Email
+        JLabel emailLabel = new JLabel("Email:");
+        emailLabel.setBounds(50, 110, 100, 25);
+        mainPanel.add(emailLabel);
+
+        emailField = new JTextField();
+        emailField.setBounds(150, 110, 150, 25);
+        mainPanel.add(emailField);
+
+        // Label dan TextField untuk Mata Kuliah
+        JLabel subjectLabel = new JLabel("Mata Kuliah:");
+        subjectLabel.setBounds(50, 150, 100, 25);
+        mainPanel.add(subjectLabel);
+
+        subjectField = new JTextField();
+        subjectField.setBounds(150, 150, 150, 25);
+        mainPanel.add(subjectField);
+
+        // Button Tambah
+        addButton = new JButton("Add");
+        addButton.setBounds(110, 200, 100, 25);
+        mainPanel.add(addButton);
+
+        // Button Refresh
+        refreshButton = new JButton("Refresh");
+        refreshButton.setBounds(220, 200, 100, 25);
+        mainPanel.add(refreshButton);
+
+        // Button Hapus
+        deleteButton = new JButton("Delete");
+        deleteButton.setBounds(330, 200, 100, 25);
+        mainPanel.add(deleteButton);
+
+        // Button Simpan
+        updateButton = new JButton("Update");
+        updateButton.setBounds(440, 200, 100, 25);
+        mainPanel.add(updateButton);
+
+        // Label status
+        statusLabel = new JLabel("");
+        statusLabel.setBounds(50, 190, 400, 25);
+        mainPanel.add(statusLabel);
+
+        tableModel = new DefaultTableModel(new String[]{"ID", "Nama", "Email", "Mata Kuliah"}, 0);
+        table = new JTable(tableModel);
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setBounds(50, 230, 680, 150);
+        mainPanel.add(scrollPane);
+
+        // Button action listeners
+        addButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                addData();
+            }
+        });
+
+        refreshButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                loadData();
+            }
+        });
+
+        deleteButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                deleteData();
+            }
+        });
+
+        updateButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                updateData();
+            }
+        });
+
+        // Setup frame
+        frame.setVisible(true);
+        loadData(); // Load data initially
+    }
+
+    private void loadData() {
+        try (Connection connection = connect()) {
+            String query = "SELECT * FROM users"; // Replace with your table name
+            Statement statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery(query);
+
+            tableModel.setRowCount(0); // Clear table rows
+
+            while (resultSet.next()) {
+                int id = resultSet.getInt("id");
+                String name = resultSet.getString("name");
+                String email = resultSet.getString("email");
+                String subject = resultSet.getString("subject");
+
+                Object[] row = {id, name, email, subject};
+                tableModel.addRow(row);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void addData() {
+        String id = idField.getText();
+        String name = nameField.getText();
+        String email = emailField.getText();
+        String subject = subjectField.getText();
+
+        if (id.isEmpty() || name.isEmpty() || email.isEmpty() || subject.isEmpty()) {
+            JOptionPane.showMessageDialog(frame, "Semua kolom harus diisi", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        try (Connection connection = connect()) {
+            String query = "INSERT INTO users (id, name, email, subject) VALUES (?, ?, ?, ?)";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setInt(1, Integer.parseInt(id));
+            preparedStatement.setString(2, name);
+            preparedStatement.setString(3, email);
+            preparedStatement.setString(4, subject);
+            preparedStatement.executeUpdate();
+
+            loadData(); // Refresh table data
+            clearFields();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void deleteData() {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(frame, "Pilih baris untuk dihapus", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        int id = (int) table.getValueAt(selectedRow, 0);
+
+        try (Connection connection = connect()) {
+            String query = "DELETE FROM users WHERE id = ?";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setInt(1, id);
+            preparedStatement.executeUpdate();
+
+            loadData(); // Refresh table data
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void updateData() {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(frame, "Pilih baris untuk diperbarui", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        int id = (int) table.getValueAt(selectedRow, 0);
+        String name = nameField.getText();
+        String email = emailField.getText();
+        String subject = subjectField.getText();
+
+        if (name.isEmpty() || email.isEmpty() || subject.isEmpty()) {
+            JOptionPane.showMessageDialog(frame, "Semua kolom harus diisi", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        try (Connection connection = connect()) {
+            String query = "UPDATE users SET name = ?, email = ?, subject = ? WHERE id = ?";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setString(1, name);
+            preparedStatement.setString(2, email);
+            preparedStatement.setString(3, subject);
+            preparedStatement.setInt(4, id);
+            preparedStatement.executeUpdate();
+
+            loadData(); // Refresh table data
+            clearFields();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void clearFields() {
+        idField.setText("");
+        nameField.setText("");
+        emailField.setText("");
+        subjectField.setText("");
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                new aplikasiGUI();
+            }
+        });
+    }
+}
